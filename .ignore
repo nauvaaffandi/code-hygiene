@@ -1,0 +1,35 @@
+# Code Hygiene default exclusions
+# Version control
+.git/
+# Dependencies
+node_modules/
+venv/
+.env/
+vendor/
+# Build artifacts
+dist/
+build/
+*.pyc
+__pycache__/
+*.o
+*.so
+*.dylib
+*.dll
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+# OS
+.DS_Store
+Thumbs.db
+# Code Hygiene own data
+.code-hygiene/
+# Logs
+*.log
+# Archives
+*.tar.gz
+*.zip
+*.tar
+*.rar
