@@ -27,6 +27,44 @@ from code_hygiene.output import render_terminal_report, render_machine_report
 from code_hygiene.reporter import ReportManager
 
 
+# Directories to exclude when searching for .hygieneignore
+EXCLUDED_DIRS = {
+    "node_modules", ".git", "build", "dist", "venv", ".venv", "__pycache__",
+    "vendor", "target", "out", "bin", "obj", "static", "artifact", "artifacts",
+    ".next", ".nuxt", ".cache", ".gradle", ".idea", ".vscode", ".DS_Store",
+    "coverage", ".nyc_output", "htmlcov", ".pytest_cache", ".mypy_cache",
+    ".tox", ".eggs", "*.egg-info", "dist", "build", "lib64", "lib"
+}
+
+
+def find_hygiene_ignore(start_path: Path) -> Path | None:
+    """
+    Walk up from start_path to find .hygieneignore file.
+    Skips excluded directories during traversal.
+    Returns the first .hygieneignore found (closest to start_path).
+    """
+    current = start_path.resolve()
+    
+    while True:
+        ignore_file = current / ".hygieneignore"
+        if ignore_file.is_file():
+            return ignore_file
+        
+        # Check if we've reached root
+        parent = current.parent
+        if parent == current:
+            break
+        
+        # Skip if current directory name is in excluded list
+        if current.name in EXCLUDED_DIRS:
+            # Continue walking up but don't search inside excluded dirs
+            pass
+        
+        current = parent
+    
+    return None
+
+
 def count_total_eligible_files(repo_root: Path, ignore_engine: IgnoreEngine) -> int:
     """Count total eligible (non-ignored, non-binary) files in the repository."""
     count = 0
@@ -101,6 +139,24 @@ Examples:
         help="Target directory to scan (default: current directory)"
     )
     parser.add_argument(
+        "--target",
+        type=str,
+        dest="target_dir_explicit",
+        default=None,
+        help="Explicit target directory to scan (same as positional arg, for clarity). Use --target . for current dir, --target backend for specific folder"
+    )
+    parser.add_argument(
+        "--ignore-file",
+        type=str,
+        default=None,
+        help="Explicit path to .hygieneignore file (overrides auto-detection). Use this if .hygieneignore is in a non-standard location."
+    )
+    parser.add_argument(
+        "--no-auto-ignore",
+        action="store_true",
+        help="Disable automatic .hygieneignore detection. Use only default patterns + explicit --ignore-file."
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Output results as JSON to stdout"
@@ -121,10 +177,17 @@ Examples:
         action="store_true",
         help="Suppress AGENT INSTRUCTIONS in terminal output"
     )
+    parser.add_argument(
+        "--concise",
+        action="store_true",
+        help="Concise output: group findings by category, show only top 5 per category, suppress verbose details"
+    )
     
     args = parser.parse_args()
     
-    target_path = Path(args.target_dir).resolve()
+    # Resolve target directory: --target takes precedence over positional arg
+    target_arg = args.target_dir_explicit if args.target_dir_explicit is not None else args.target_dir
+    target_path = Path(target_arg).resolve()
     if not target_path.exists():
         print(f"Error: Target directory '{target_path}' does not exist.", file=sys.stderr)
         sys.exit(3)
@@ -136,8 +199,25 @@ Examples:
     # Load configuration
     config = load_config(str(target_path))
     
-    # Initialize components
-    ignore_engine = IgnoreEngine(target_path, target_path / ".ignore")
+    # Determine ignore file path
+    # Priority: 1) --ignore-file explicit, 2) auto-detected .hygieneignore, 3) <target>/.ignore (legacy), 4) default patterns only
+    ignore_file_path = None
+    if args.ignore_file:
+        ignore_file_path = Path(args.ignore_file).resolve()
+    elif not args.no_auto_ignore:
+        # Auto-detect .hygieneignore by walking up from current working directory
+        cwd = Path.cwd().resolve()
+        detected = find_hygiene_ignore(cwd)
+        if detected:
+            ignore_file_path = detected
+            print(f"Using .hygieneignore: {detected}", file=sys.stderr)
+        else:
+            # Fallback to legacy .ignore in target directory
+            legacy_ignore = target_path / ".ignore"
+            if legacy_ignore.is_file():
+                ignore_file_path = legacy_ignore
+    
+    ignore_engine = IgnoreEngine(target_path, ignore_file_path)
     
     # Run detectors
     findings = run_detectors(target_path, ignore_engine, config, args.task)
@@ -213,7 +293,7 @@ Examples:
         from code_hygiene.output.machine import render_machine_report
         print(render_machine_report(policy_result))
     else:
-        print(render_terminal_report(policy_result, show_instructions=not args.no_instructions))
+        print(render_terminal_report(policy_result, show_instructions=not args.no_instructions, concise=args.concise))
     
     sys.exit(exit_code)
 

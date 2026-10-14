@@ -12,7 +12,7 @@ Instructs AI coding agents to maintain high codebase hygiene by preventing unnec
 
 | Detector | Category | Description |
 |----------|----------|-------------|
-| `file_size` | File size | Physical line count thresholds: SAFE (<200), WARNING (200–249), REFACTOR SOON (250–299), CRITICAL (300+) |
+| `file_size` | File size | Physical line count thresholds: SAFE (<300), WARNING (300–349), REFACTOR SOON (350–399), CRITICAL (400+) |
 | `directory` | Directory org | Flags directories exceeding 15 eligible files |
 | `duplicate` | Duplicate code | Normalized and AST-based duplicate block detection (Jaccard similarity) |
 | `dead_code` | Dead code | Unused imports, unreachable functions/classes, entry-point aware |
@@ -23,10 +23,10 @@ Instructs AI coding agents to maintain high codebase hygiene by preventing unnec
 ## Interpreting the Report
 
 ### File Size Thresholds
-- **SAFE (<200 lines)**: No action required.
-- **WARNING (200–249 lines)**: Avoid adding complex logic or heavy functionality.
-- **REFACTOR SOON (250–299 lines)**: Prioritize refactoring as soon as reasonably possible.
-- **CRITICAL (300+ lines)**: Refactoring is mandatory.
+- **SAFE (<300 lines)**: No action required.
+- **WARNING (300–349 lines)**: Avoid adding complex logic. Last warning before critical.
+- **REFACTOR SOON (350–399 lines)**: Prioritize refactoring as soon as reasonably possible.
+- **CRITICAL (400+ lines)**: Refactoring is mandatory (wajib refactor).
 
 ### Directory Organization
 - **Directory > 15 files**: Must distribute into meaningful subdirectories. Avoid creating additional files in over-limit directories.

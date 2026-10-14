@@ -1,8 +1,23 @@
-IMPLEMENTATION_PLAN.md
-skills/
-tests/
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Runtime reports & local test projects
+.code-hygiene/
 test_project/
 
+# Planning docs
+IMPLEMENTATION_PLAN.md
 
-
-
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

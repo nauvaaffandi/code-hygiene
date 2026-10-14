@@ -9,9 +9,9 @@
 
 DEFAULT_FILE_SIZE = {
     "min_safe": 0,
-    "warning": 200,
-    "refactor_soon": 250,
-    "critical": 300,
+    "warning": 300,
+    "refactor_soon": 350,
+    "critical": 400,
 }
 
 DEFAULT_DIRECTORY = {
